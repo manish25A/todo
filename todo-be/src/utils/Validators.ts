@@ -1,4 +1,4 @@
-import { IsEmail, IsString } from 'class-validator';
+import { IsBoolean, IsDate, IsEmail, IsString } from 'class-validator';
 
 export class UserValidator {
 	@IsString()
@@ -24,4 +24,6 @@ export class TodoValidator {
 	type: string;
 	@IsString()
 	successRate: string;
+	@IsString()
+	status: string;
 }

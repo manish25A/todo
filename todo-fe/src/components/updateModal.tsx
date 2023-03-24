@@ -2,7 +2,15 @@ import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
-import { LinearProgress, Stack, TextField } from '@mui/material';
+import {
+	FormControl,
+	InputLabel,
+	LinearProgress,
+	MenuItem,
+	Select,
+	Stack,
+	TextField,
+} from '@mui/material';
 import axios from 'axios';
 import { useQuery } from 'react-query';
 import { AxiosInstance } from '../utils/axiosInterceptor';
@@ -33,6 +41,7 @@ type inputTypes = {
 	name: string;
 	type: string;
 	successRate: string;
+	status: string;
 };
 export const UpdateModal = (props: propsTypes) => {
 	const [inputs, setInputs] = useState<inputTypes>({
@@ -40,12 +49,12 @@ export const UpdateModal = (props: propsTypes) => {
 		name: '',
 		type: '',
 		successRate: '',
+		status: '',
 	});
 	const [loading, setLoading] = useState(false);
 	const [openSnackbar, setOpenSnackBar] = useState(false);
 	const [message, setMessage] = useState('');
 	const [severity, setSeverity] = useState('');
-	// if (props.modalState) {
 	const fetchTodos = async () => {
 		return await AxiosInstance.get(`/get-single-todo`, {
 			params: {
@@ -67,51 +76,77 @@ export const UpdateModal = (props: propsTypes) => {
 			setInputs(data?.data?.data);
 		}
 	}, [data]);
-	// }
 	const handleChange = (event: any) => {
 		const name = event.target.name;
 		const value = event.target.value;
+		console.log(name, value);
 		setInputs((values: any) => ({ ...values, [name]: value }));
 	};
 
 	const handleSubmit = async (event: any) => {
 		event.preventDefault();
-		if (inputs?._id) {
-			return await AxiosInstance.put(`/update-todo`, inputs)
-				.then((res) => {
-					if (res.status === 200) {
-						props.handleClose();
-						props.handleUpdatedData(res.data);
-						setOpenSnackBar(true);
-						setMessage('Todo Updated successfully');
-						setSeverity('success');
-					}
-				})
-				.catch((err) => {
-					setOpenSnackBar(true);
-					setMessage(err.response.data.message);
-					setSeverity('error');
-				});
-		} else {
-			delete inputs?._id;
-			return await AxiosInstance.post(`/createtodo`, inputs)
-				.then((res) => {
-					console.log(res.status);
-					if (res.status === 201) {
-						props.handleClose();
-						props.handleSavedData(res.data);
-						setOpenSnackBar(true);
-						setMessage('Todo Saved successfully');
-						setSeverity('success');
-					}
-				})
-				.catch((err) => {
-					setOpenSnackBar(true);
-					setMessage(err.response.data.message);
-					setSeverity('error');
-					console.log(err);
-				});
+		if (
+			inputs?.name !== '' ||
+			inputs?.status !== '' ||
+			inputs?.successRate !== '' ||
+			inputs?.type !== ''
+		) {
+			if (inputs?._id) {
+				return await AxiosInstance.put(`/update-todo`, inputs)
+					.then((res) => {
+						if (res.status === 200) {
+							props.handleClose();
+							props.handleUpdatedData(res.data);
+							handleSnackbar(true, 'Todo Updated successfully', 'success');
+						}
+					})
+					.catch((err) => {
+						handleSnackbar(true, err.response.data.message, 'error');
+					});
+			} else {
+				delete inputs?._id;
+				return await AxiosInstance.post(`/createtodo`, inputs)
+					.then((res) => {
+						console.log(res.status);
+						if (res.status === 201) {
+							props.handleClose();
+							props.handleSavedData(res.data);
+							setOpenSnackBar(true);
+							setMessage('Todo Saved successfully');
+							setSeverity('success');
+							handleSnackbar(true, 'Todo Saved successfully', 'success');
+						}
+					})
+					.catch((err) => {
+						handleSnackbar(true, err.response.data.message, 'error');
+						console.log(err);
+					});
+			}
 		}
+	};
+
+	const handleSnackbar = (
+		snackbarstatus: boolean,
+		message: string,
+		severity: string
+	) => {
+		setOpenSnackBar(snackbarstatus);
+		setMessage(message);
+		setSeverity(severity);
+		setTimeout(() => {
+			setOpenSnackBar(false);
+		}, 2000);
+	};
+
+	const handleModalClose = () => {
+		props.handleClose();
+		setInputs({
+			_id: '',
+			name: '',
+			type: '',
+			successRate: '',
+			status: '',
+		});
 	};
 
 	return (
@@ -143,7 +178,7 @@ export const UpdateModal = (props: propsTypes) => {
 				<div>
 					<Modal
 						open={props.modalState}
-						onClose={props.handleClose}
+						onClose={handleModalClose}
 						aria-labelledby='modal-modal-title'
 						aria-describedby='modal-modal-description'
 					>
@@ -176,6 +211,7 @@ export const UpdateModal = (props: propsTypes) => {
 								margin='normal'
 								required
 								fullWidth
+								type='number'
 								name='successRate'
 								label='Success Rate'
 								id='successRate'
@@ -183,8 +219,31 @@ export const UpdateModal = (props: propsTypes) => {
 								value={inputs?.successRate}
 								onChange={handleChange}
 							/>
+							<FormControl required sx={{ minWidth: '100%' }}>
+								<InputLabel id='demo-simple-select-required-label'>
+									Status
+								</InputLabel>
+								<Select
+									labelId='demo-simple-select-required-label'
+									id='demo-simple-select-required'
+									value={inputs?.status}
+									name='status'
+									label='Status *'
+									onChange={handleChange}
+								>
+									<MenuItem value={'todo'}>To:do</MenuItem>
+									<MenuItem value={'doing'}>Doing</MenuItem>
+									<MenuItem value={'completed'}>Completed</MenuItem>
+								</Select>
+							</FormControl>
 
 							<Button
+								disabled={
+									inputs?.name === '' ||
+									inputs?.status === '' ||
+									inputs?.successRate === '' ||
+									inputs?.type === ''
+								}
 								type='submit'
 								fullWidth
 								variant='contained'

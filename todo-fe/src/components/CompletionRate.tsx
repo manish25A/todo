@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -21,12 +21,8 @@ import { loginContext } from '../utils/loginContext';
 import { Loading } from '../utils/Loading';
 
 interface Data {
-	_id: string;
-	name: string;
-	type: string;
-	successRate: string;
-	status: string;
-	actions: string;
+	_id: any;
+	completionRate: string;
 }
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
@@ -77,34 +73,16 @@ interface HeadCell {
 
 const headCells: readonly HeadCell[] = [
 	{
-		id: 'name',
+		id: '_id',
 		numeric: false,
 		disablePadding: false,
-		label: 'Name',
+		label: 'Date',
 	},
 	{
-		id: 'type',
+		id: 'completionRate',
 		numeric: false,
 		disablePadding: false,
-		label: 'Type',
-	},
-	{
-		id: 'successRate',
-		numeric: false,
-		disablePadding: false,
-		label: 'Success Rate (%)',
-	},
-	{
-		id: 'status',
-		numeric: false,
-		disablePadding: false,
-		label: 'Status',
-	},
-	{
-		id: 'actions',
-		numeric: false,
-		disablePadding: false,
-		label: 'Actions',
+		label: 'Completion Rate(%)',
 	},
 ];
 
@@ -153,22 +131,23 @@ function TableHeadProps(props: EnhancedTableProps) {
 	);
 }
 
-export default function TodoPage() {
+export default function CompletionTable() {
 	const [order, setOrder] = React.useState<Order>('asc');
-	const [orderBy, setOrderBy] = React.useState<keyof Data>('name');
-	const [selected, setSelected] = React.useState<readonly string[]>([]);
+	const [orderBy, setOrderBy] = React.useState<keyof Data>('completionRate');
 	const [page, setPage] = React.useState(0);
 	const [dense, setDense] = React.useState(false);
 	const [rowsPerPage, setRowsPerPage] = React.useState(5);
-	const [editModal, setEditModalOpen] = React.useState(false);
-	const [id, setId] = React.useState('');
-	const fetchTodos = async () => {
-		return await AxiosInstance.get('/list-all-todo');
+	const fetchCompletedTodos = async () => {
+		return await AxiosInstance.get('/completed-todo');
 	};
-	const { isLoading, data, error } = useQuery('list-all-todo', fetchTodos);
+	const { isLoading, data, error } = useQuery(
+		'completed-todo',
+		fetchCompletedTodos
+	);
 
-	const rows: any = data?.data?.data ?? [];
+	const rows: any = data?.data?.data[0]?.percentages ?? [];
 
+	console.log(rows);
 	const handleRequestSort = (
 		event: React.MouseEvent<unknown>,
 		property: keyof Data
@@ -189,102 +168,9 @@ export default function TodoPage() {
 		setPage(0);
 	};
 
-	const isSelected = (name: string) => selected.indexOf(name) !== -1;
-
-	// Avoid a layout jump when reaching the last page with empty rows.
 	const emptyRows =
 		page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
-	const handleEditClick = (event: any) => {
-		setId(event.target.value);
-		setEditModalOpen(true);
-	};
-	const closeEditModal = () => {
-		setEditModalOpen(false);
-	};
-	const handleDeleteClick = async (event: any) => {
-		console.log(event.target.value);
-		await AxiosInstance.delete('/delete-todo', {
-			params: { _id: event.target.value },
-		})
-			.then((res) => {
-				if (res.status === 200) {
-					const index = rows.findIndex((x: any) => x._id === res.data.data._id);
-					console.log(index);
-					rows.splice(index, 1);
-				}
-			})
-			.catch((err) => {
-				console.log(err);
-			});
-	};
-
-	const handleChangedData = (event: any) => {
-		const updatedDataIndex = rows.findIndex(
-			(x: any) => x._id === event.data._id
-		);
-		rows[updatedDataIndex] = event.data;
-	};
-	const handleSavedData = (event: any) => {
-		rows.push(event.data);
-	};
-	const { isAuth, setAuth } = useContext(loginContext);
-
-	const handleLogout = () => {
-		localStorage.removeItem('token');
-		setAuth(false);
-	};
-
-	function EnhancedTableToolbar() {
-		return (
-			<Toolbar
-				sx={{
-					pl: { sm: 2 },
-					pr: { xs: 1, sm: 1 },
-				}}
-			>
-				<Typography
-					sx={{ flex: '1 1 100%' }}
-					variant='h6'
-					id='tableTitle'
-					component='div'
-				>
-					Todo List
-				</Typography>
-
-				<Typography
-					sx={{ flex: '1 1 1 25%' }}
-					marginRight={'20px'}
-					variant='h6'
-					id='tableTitle'
-					component='div'
-				>
-					<Button
-						variant='contained'
-						onClick={(event) => handleEditClick(event)}
-						endIcon={<Add />}
-						size='small'
-					>
-						Add Todo
-					</Button>
-				</Typography>
-				<Typography
-					sx={{ flex: '1 1 1 5%' }}
-					variant='h6'
-					id='tableTitle'
-					component='div'
-				>
-					<Button
-						variant='contained'
-						onClick={(event) => handleLogout()}
-						size='small'
-					>
-						Logout
-					</Button>
-				</Typography>
-			</Toolbar>
-		);
-	}
 	return (
 		<>
 			{isLoading ? (
@@ -293,7 +179,6 @@ export default function TodoPage() {
 				<>
 					<Box sx={{ width: '100%' }}>
 						<Paper sx={{ width: '100%', mb: 2 }}>
-							<EnhancedTableToolbar />
 							<TableContainer>
 								<Table
 									sx={{ minWidth: 750 }}
@@ -314,31 +199,11 @@ export default function TodoPage() {
 											.map((row, index) => {
 												return (
 													<TableRow hover tabIndex={-1} key={index}>
-														<TableCell align='center'>{row.name}</TableCell>
-														<TableCell align='center'>{row.type}</TableCell>
 														<TableCell align='center'>
-															{row.successRate}
+															{row?._id?.creationDate}
 														</TableCell>
-														<TableCell align='center'>{row.status}</TableCell>
 														<TableCell align='center'>
-															<Button
-																value={row._id}
-																variant='contained'
-																onClick={(event) => handleEditClick(event)}
-																endIcon={<Edit />}
-																size='small'
-															>
-																Edit
-															</Button>
-															<Button
-																value={row._id}
-																variant='outlined'
-																startIcon={<Delete />}
-																onClick={handleDeleteClick}
-																size='small'
-															>
-																Delete
-															</Button>
+															{row.completionRate}
 														</TableCell>
 													</TableRow>
 												);
@@ -366,13 +231,6 @@ export default function TodoPage() {
 							/>
 						</Paper>
 					</Box>
-					<UpdateModal
-						id={id}
-						modalState={editModal}
-						handleClose={closeEditModal}
-						handleUpdatedData={handleChangedData}
-						handleSavedData={handleSavedData}
-					/>
 				</>
 			)}
 		</>

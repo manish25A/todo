@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Login } from './login';
 import { BrowserRouter, Link, Route, Router, Routes } from 'react-router-dom';
-import { TodoPage } from './todos';
 import { loginContext } from '../utils/loginContext';
-import { Register } from './register';
+import { LinearProgress, Stack } from '@mui/material';
+import { Loading } from '../utils/Loading';
+import CompletionTable from './CompletionRate';
+import Breadcrumb from '../utils/Breadcrumb';
 
+const Register = lazy(() => import('./register'));
+const TodoPage = lazy(() => import('./todos'));
+// import TodoPage from './todos';
 const theme = createTheme();
 
 const MainContainer = () => {
@@ -18,16 +23,36 @@ const MainContainer = () => {
 		<loginContext.Provider value={{ isAuth, setAuth }}>
 			<ThemeProvider theme={theme}>
 				<BrowserRouter>
-					<Routes>
-						{!isAuth ? (
-							<>
-								<Route path='/' element={<Login />} />
-								<Route path='/register' element={<Register />} />
-							</>
-						) : (
-							<Route path='/' element={<TodoPage />} />
-						)}
-					</Routes>
+					{isAuth && <Breadcrumb />}
+					<Stack>
+						<Routes>
+							{!isAuth ? (
+								<>
+									<Route path='/' element={<Login />} />
+									<Route path='/register' element={<Register />} />
+								</>
+							) : (
+								<>
+									<Route
+										path='/'
+										element={
+											<Suspense fallback={<Loading />}>
+												<TodoPage />
+											</Suspense>
+										}
+									/>
+									<Route
+										path='/completion-table'
+										element={
+											<Suspense fallback={<Loading />}>
+												<CompletionTable />
+											</Suspense>
+										}
+									/>
+								</>
+							)}
+						</Routes>
+					</Stack>
 				</BrowserRouter>
 			</ThemeProvider>
 		</loginContext.Provider>

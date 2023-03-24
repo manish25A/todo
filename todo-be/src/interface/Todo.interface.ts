@@ -3,5 +3,7 @@ export interface TodoInterface {
 	name: string;
 	type: string;
 	successRate: string;
+	status: string;
+	creationDate: Date;
 	userId: string;
 }

@@ -12,6 +12,7 @@ const authMiddleware = async (
 	next: NextFunction
 ) => {
 	try {
+		console.log(req.header('token').split('Authorization=')[1]);
 		const Authorization = req.header('token')
 			? req.header('token').split('Authorization=')[1]
 			: null;

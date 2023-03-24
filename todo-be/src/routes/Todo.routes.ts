@@ -41,6 +41,11 @@ class TodoRoute implements Routes {
 			authMiddleware,
 			this.TodoController.deleteTodo
 		);
+		this.router.get(
+			`${this.path}completed-todo`,
+			authMiddleware,
+			this.TodoController.getCompletionRate
+		);
 	}
 }
 

@@ -78,9 +78,21 @@ class AuthController {
 	) => {
 		try {
 			const { _id } = req.query;
-			console.log('query', req.query);
 			const deleteTodo = await this.todoService.deleteTodo(_id);
 			res.status(200).json({ data: deleteTodo, message: 'todo deleted' });
+		} catch (error) {
+			next(error);
+		}
+	};
+	public getCompletionRate = async (
+		req: TodoRequest,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const { _id } = req.user;
+			const completedTodo = await this.todoService.getCompletionRate(_id);
+			res.status(200).json({ data: completedTodo, message: 'completion rate' });
 		} catch (error) {
 			next(error);
 		}

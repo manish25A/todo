@@ -14,7 +14,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { loginContext } from '../utils/loginContext';
 import { SnackbarComponent } from '../common/snackbar';
 
-export const Register = () => {
+export default function Register() {
 	const navigate = useNavigate();
 	const [openSnackbar, setOpenSnackBar] = useState(false);
 	const [message, setMessage] = useState('');
@@ -148,4 +148,4 @@ export const Register = () => {
 			/>
 		</>
 	);
-};
+}
